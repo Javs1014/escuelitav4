@@ -6,31 +6,31 @@
         <div class="col-md-8">
             <div class="card shadow-lg border-0">
                 <div class="card-header bg-light">
-                    <h4 class="mb-0">Consultar Historial de Alumno</h4>
+                    <h4 class="mb-0">Generar Reporte de Promedios Generales</h4>
                 </div>
                 <div class="card-body">
-                    <p class="text-muted">Selecciona un alumno y, opcionalmente, un período para ver su historial.</p>
+                    <p class="text-muted">Selecciona los filtros opcionales para generar el reporte de promedios.</p>
 
-                    <form action="{{ route('procedimientos.proc3.run') }}" method="POST">
+                    <form action="{{ route('procedimientos.proc5.run') }}" method="POST">
                         @csrf
 
-                        {{-- Campo para seleccionar el Alumno por matrícula --}}
+                        {{-- Carrera (Opcional) --}}
                         <div class="form-floating mb-3">
-                             <select name="matricula_alumno" class="form-select @error('matricula_alumno') is-invalid @enderror" id="matricula_alumno" required>
-                                <option value="">-- Seleccione un Alumno --</option>
-                                @foreach($alumnos as $alumno)
-                                    <option value="{{ $alumno->matricula }}" {{ old('matricula_alumno') == $alumno->matricula ? 'selected' : '' }}>
-                                        {{ $alumno->apellido_paterno }} {{ $alumno->apellido_materno }}, {{ $alumno->nombre }} ({{ $alumno->matricula }})
+                             <select name="nombre_carrera" class="form-select @error('nombre_carrera') is-invalid @enderror" id="nombre_carrera">
+                                <option value="">-- Todas las Carreras --</option>
+                                @foreach($carreras as $carrera)
+                                    <option value="{{ $carrera->nombre }}" {{ old('nombre_carrera') == $carrera->nombre ? 'selected' : '' }}>
+                                        {{ $carrera->nombre }}
                                     </option>
                                 @endforeach
                             </select>
-                            <label for="matricula_alumno"><i class="fas fa-user-graduate me-2"></i>Alumno (Requerido)</label>
-                            @error('matricula_alumno')
+                            <label for="nombre_carrera"><i class="fas fa-graduation-cap me-2"></i>Carrera (Opcional)</label>
+                            @error('nombre_carrera')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-
-                        {{-- Período (Año) - Opcional --}}
+                        
+                        {{-- Período (Año) (Opcional) --}}
                         <div class="form-floating mb-3">
                              <select name="periodo" class="form-select @error('periodo') is-invalid @enderror" id="periodo">
                                 <option value="">-- Todos los Períodos --</option>
@@ -50,8 +50,8 @@
                             <a href="{{ route('procedimientos.index') }}" class="btn btn-outline-secondary me-2">
                                 <i class="fas fa-times me-1"></i> Cancelar
                             </a>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-search me-1"></i> Consultar Historial
+                            <button type="submit" class="btn btn-secondary">
+                                <i class="fas fa-chart-bar me-1"></i> Generar Reporte
                             </button>
                         </div>
                     </form>

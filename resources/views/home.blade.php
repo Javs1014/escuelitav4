@@ -74,12 +74,12 @@
             <p class="text-muted">Asignar materias a profesores.</p>
         </a>
 
-        {{-- Tarjeta para Paquete-Materias --}}
+        <!-- {{-- Tarjeta para Paquete-Materias --}}
         <a href="{{ route('paquete-materias.index') }}" class="dashboard-card">
             <i class="fas fa-sitemap fa-3x mb-3"></i>
             <h3 class="font-weight-bold">Contenido Paquetes</h3>
             <p class="text-muted">Definir las materias de cada paquete.</p>
-        </a>
+        </a> -->
                 <a href="{{ route('procedimientos.index') }}" class="dashboard-card">
             <i class="fas fa-cogs fa-3x mb-3"></i>
             <h3 class="font-weight-bold">Procedimientos</h3>

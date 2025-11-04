@@ -20,6 +20,12 @@ class ProcedimientoController extends Controller
         return view('procedimientos.index');
     }
 
+    private function getAvailableYears()
+    {
+        // Usamos la tabla historiales para obtener los años
+        return DB::table('historiales')->distinct()->orderBy('año', 'desc')->pluck('año');
+    }
+
     // --- Procedimiento 1 ---
     public function showProc1Form(): View
     {
@@ -95,26 +101,37 @@ class ProcedimientoController extends Controller
         return view('procedimientos.proc2-results', compact('resultados', 'nombre_grupo'));
     }
 
-    // --- Procedimiento 3 ---
+// --- Procedimiento 3 ---
     public function showProc3Form(): View
     {
         $alumnos = Alumno::orderBy('apellido_paterno')->get();
-        return view('procedimientos.proc3-form', compact('alumnos'));
+        $años = $this->getAvailableYears();
+        return view('procedimientos.proc3-form', compact('alumnos', 'años'));
     }
 
     public function runProc3(Request $request)
     {
-        $request->validate(['matricula_alumno' => 'required|string|exists:alumnos,matricula']);
+        $request->validate([
+            'matricula_alumno' => 'required|string|exists:alumnos,matricula',
+            'periodo' => 'nullable|integer' // Añadido (opcional)
+        ]);
+        
         $matricula_alumno = $request->input('matricula_alumno');
-
+        $periodo = $request->input('periodo'); // Añadido
         $alumno = Alumno::find($matricula_alumno);
 
-        $resultados = DB::table('historiales as h')
+        $query = DB::table('historiales as h')
             ->join('materias as m', 'h.materia_id', '=', 'm.id')
-            ->leftJoin('grupos as g', 'm.id', '=', 'g.materia_id')
+            ->leftJoin('grupos as g', 'h.grupo_id', '=', 'g.id') // Corregido: Unir por h.grupo_id
             ->leftJoin('profesores as p', 'g.profesor_id', '=', 'p.id')
-            ->where('h.alumno_matricula', $matricula_alumno)
-            ->select(
+            ->where('h.alumno_matricula', $matricula_alumno);
+
+        // Aplicar filtro de período solo si se proporcionó
+        $query->when($periodo, function ($q) use ($periodo) {
+            return $q->where('h.año', $periodo);
+        });
+
+        $resultados = $query->select(
                 'm.nombre as nombre_materia',
                 'g.nombre as nombre_grupo',
                 'h.semestre',
@@ -127,7 +144,7 @@ class ProcedimientoController extends Controller
             ->orderBy('h.semestre')
             ->get();
 
-        return view('procedimientos.proc3-results', compact('resultados', 'alumno'));
+        return view('procedimientos.proc3-results', compact('resultados', 'alumno', 'periodo'));
     }
 
     // --- Procedimiento 4 ---
@@ -155,26 +172,52 @@ class ProcedimientoController extends Controller
             return redirect()->route('procedimientos.index')->with('error', 'Ocurrió un error al generar el reporte.');
         }
     }
-
-    // --- Procedimiento 5 ---
-    public function runProc5()
+// --- Procedimiento 5 ---
+    // NUEVA VISTA DE FORMULARIO
+    public function showProc5Form(): View
     {
+        $carreras = Carrera::orderBy('nombre')->get();
+        $años = $this->getAvailableYears();
+        return view('procedimientos.proc5-form', compact('carreras', 'años'));
+    }
+
+    // MÉTODO RUN MODIFICADO
+    public function runProc5(Request $request)
+    {
+        $request->validate([
+            'nombre_carrera' => 'nullable|string', // Opcional
+            'periodo' => 'nullable|integer'      // Opcional
+        ]);
+
+        $nombre_carrera = $request->input('nombre_carrera');
+        $periodo = $request->input('periodo');
+
         try {
-            $resultados = DB::table('alumnos as a')
+            $query = DB::table('alumnos as a')
                 ->join('historiales as h', 'a.matricula', '=', 'h.alumno_matricula')
-                ->join('carreras as c', 'a.carrera_id', '=', 'c.id')
-                ->select(
+                ->join('carreras as c', 'a.carrera_id', '=', 'c.id');
+
+            // Aplicar filtros opcionales
+            $query->when($nombre_carrera, function ($q) use ($nombre_carrera) {
+                return $q->where('c.nombre', $nombre_carrera);
+            });
+
+            $query->when($periodo, function ($q) use ($periodo) {
+                return $q->where('h.año', $periodo);
+            });
+
+            $resultados = $query->select(
                     'a.matricula',
                     DB::raw("CONCAT(a.nombre, ' ', COALESCE(a.segundo_nombre, ''), ' ', a.apellido_paterno, ' ', a.apellido_materno) AS nombre_completo"),
                     'c.nombre as nombre_carrera',
                     DB::raw('AVG(h.calificacion) AS promedio')
                 )
                 ->groupBy('a.matricula', 'a.nombre', 'a.segundo_nombre', 'a.apellido_paterno', 'a.apellido_materno', 'c.nombre')
-                ->orderBy('nombre_carrera', 'asc') // <-- CAMBIO AQUÍ
+                ->orderBy('nombre_carrera', 'asc')
                 ->orderBy('promedio', 'desc')
                 ->get();
 
-            return view('procedimientos.proc5-results', compact('resultados'));
+            return view('procedimientos.proc5-results', compact('resultados', 'nombre_carrera', 'periodo'));
 
         } catch (\Exception $e) {
             Log::error('Error al ejecutar Procedimiento 5: ' . $e->getMessage());
@@ -182,4 +225,3 @@ class ProcedimientoController extends Controller
         }
     }
 }
-

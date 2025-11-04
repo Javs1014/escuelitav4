@@ -59,8 +59,9 @@
             Route::post('/reporte-alumnos-grupo', [ProcedimientoController::class, 'runProc4'])->name('proc4.run');
     
             // Proc 5: Reporte de Promedios por Alumno
-            Route::post('/reporte-promedios', [ProcedimientoController::class, 'runProc5'])->name('proc5.run');
-        });
+            Route::get('/reporte-promedios', [ProcedimientoController::class, 'showProc5Form'])->name('proc5.form'); // NUEVO
+            Route::post('/reporte-promedios', [ProcedimientoController::class, 'runProc5'])->name('proc5.run'); // MODIFICADO
+    });
     });
     
 
